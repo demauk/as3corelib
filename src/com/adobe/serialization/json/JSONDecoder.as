@@ -34,9 +34,8 @@ package com.adobe.serialization.json
 {
 	
 	public class JSONDecoder
-	{
-		
-		/**
+	{	
+		/** 
 		 * Flag indicating if the parser should be strict about the format
 		 * of the JSON string it is attempting to decode.
 		 */
@@ -52,7 +51,7 @@ package com.adobe.serialization.json
 		private var token:JSONToken;
 		
 		/**
-		 * Constructs a new JSONDecoder to parse a JSON string
+		 * Constructs a new JSONDecoder to parse a JSON string 
 		 * into a native object.
 		 *
 		 * @param s The JSON string to be converted
@@ -64,12 +63,15 @@ package com.adobe.serialization.json
 		 * @tiptext
 		 */
 		public function JSONDecoder( s:String, strict:Boolean )
-		{
+		{	
 			this.strict = strict;
 			tokenizer = new JSONTokenizer( s, strict );
 			
 			nextToken();
-			value = parseValue();
+			if ( token != null ) {
+			    value = parseValue();
+			}
+			// token == null probably means s was empty
 			
 			// Make sure the input stream is empty
 			if ( strict && nextToken() != null )
@@ -103,30 +105,6 @@ package com.adobe.serialization.json
 		}
 		
 		/**
-		 * Returns the next token from the tokenizer reading
-		 * the JSON string and verifies that the token is valid.
-		 */
-		private final function nextValidToken():JSONToken
-		{
-			token = tokenizer.getNextToken();
-			checkValidToken();
-			
-			return token;
-		}
-		
-		/**
-		 * Verifies that the token is valid.
-		 */
-		private final function checkValidToken():void
-		{
-			// Catch errors when the input stream ends abruptly
-			if ( token == null )
-			{
-				tokenizer.parseError( "Unexpected end of input" );
-			}
-		}
-		
-		/**
 		 * Attempt to parse an array.
 		 */
 		private final function parseArray():Array
@@ -137,7 +115,7 @@ package com.adobe.serialization.json
 			
 			// grab the next token from the tokenizer to move
 			// past the opening [
-			nextValidToken();
+			nextToken();
 			
 			// check to see if we have an empty array
 			if ( token.type == JSONTokenType.RIGHT_BRACKET )
@@ -150,7 +128,7 @@ package com.adobe.serialization.json
 			else if ( !strict && token.type == JSONTokenType.COMMA )
 			{
 				// move past the comma
-				nextValidToken();
+				nextToken();
 				
 				// check to see if we're reached the end of the array
 				if ( token.type == JSONTokenType.RIGHT_BRACKET )
@@ -169,9 +147,9 @@ package com.adobe.serialization.json
 			{
 				// read in the value and add it to the array
 				a.push( parseValue() );
-				
+
 				// after the value there should be a ] or a ,
-				nextValidToken();
+				nextToken();
 				
 				if ( token.type == JSONTokenType.RIGHT_BRACKET )
 				{
@@ -187,8 +165,6 @@ package com.adobe.serialization.json
 					// if the decoder is not in strict mode
 					if ( !strict )
 					{
-						checkValidToken();
-						
 						// Reached ",]" as the end of the array, so return it
 						if ( token.type == JSONTokenType.RIGHT_BRACKET )
 						{
@@ -201,25 +177,24 @@ package com.adobe.serialization.json
 					tokenizer.parseError( "Expecting ] or , but found " + token.value );
 				}
 			}
-			
-			return null;
+            return null;
 		}
 		
 		/**
 		 * Attempt to parse an object.
 		 */
-		private final function parseObject():Object
+		private function parseObject():Object
 		{
 			// create the object internally that we're going to
 			// attempt to parse from the tokenizer
 			var o:Object = new Object();
-			
+						
 			// store the string part of an object member so
 			// that we can assign it a value in the object
 			var key:String
 			
 			// grab the next token from the tokenizer
-			nextValidToken();
+			nextToken();
 			
 			// check to see if we have an empty object
 			if ( token.type == JSONTokenType.RIGHT_BRACE )
@@ -232,7 +207,7 @@ package com.adobe.serialization.json
 			else if ( !strict && token.type == JSONTokenType.COMMA )
 			{
 				// move past the comma
-				nextValidToken();
+				nextToken();
 				
 				// check to see if we're reached the end of the object
 				if ( token.type == JSONTokenType.RIGHT_BRACE )
@@ -255,17 +230,17 @@ package com.adobe.serialization.json
 					key = String( token.value );
 					
 					// move past the string to see what's next
-					nextValidToken();
+					nextToken();
 					
 					// after the string there should be a :
 					if ( token.type == JSONTokenType.COLON )
 					{
 						// move past the : and read/assign a value for the key
 						nextToken();
-						o[ key ] = parseValue();
+						o[ key ] = parseValue();	
 						
 						// move past the value to see what's next
-						nextValidToken();
+						nextToken();
 						
 						// after the value there's either a } or a ,
 						if ( token.type == JSONTokenType.RIGHT_BRACE )
@@ -282,8 +257,6 @@ package com.adobe.serialization.json
 							// if the decoder is not in strict mode
 							if ( !strict )
 							{
-								checkValidToken();
-								
 								// Reached ",}" as the end of the object, so return it
 								if ( token.type == JSONTokenType.RIGHT_BRACE )
 								{
@@ -302,7 +275,7 @@ package com.adobe.serialization.json
 					}
 				}
 				else
-				{
+				{	
 					tokenizer.parseError( "Expecting string but found " + token.value );
 				}
 			}
@@ -314,23 +287,27 @@ package com.adobe.serialization.json
 		 */
 		private final function parseValue():Object
 		{
-			checkValidToken();
-			
+			// Catch errors when the input stream ends abruptly
+			if ( token == null )
+			{
+				tokenizer.parseError( "Unexpected end of input" );
+			}
+
 			switch ( token.type )
 			{
 				case JSONTokenType.LEFT_BRACE:
 					return parseObject();
-				
+
 				case JSONTokenType.LEFT_BRACKET:
 					return parseArray();
-				
+
 				case JSONTokenType.STRING:
 				case JSONTokenType.NUMBER:
 				case JSONTokenType.TRUE:
 				case JSONTokenType.FALSE:
 				case JSONTokenType.NULL:
 					return token.value;
-				
+
 				case JSONTokenType.NAN:
 					if ( !strict )
 					{
@@ -340,10 +317,10 @@ package com.adobe.serialization.json
 					{
 						tokenizer.parseError( "Unexpected " + token.value );
 					}
-				
+
 				default:
 					tokenizer.parseError( "Unexpected " + token.value );
-			
+
 			}
 			
 			return null;

@@ -32,7 +32,7 @@
 
 package com.adobe.serialization.json
 {
-	
+
 	/**
 	 * This class provides encoding and decoding of the JSON format.
 	 *
@@ -63,13 +63,13 @@ package com.adobe.serialization.json
 		
 		/**
 		 * Decodes a JSON string into a native object.
-		 *
+		 * 
 		 * @param s The JSON string representing the object
 		 * @param strict Flag indicating if the decoder should strictly adhere
 		 * 		to the JSON standard or not.  The default of <code>true</code>
 		 * 		throws errors if the format does not match the JSON syntax exactly.
 		 * 		Pass <code>false</code> to allow for non-properly-formatted JSON
-		 * 		strings to be decoded with more leniancy.
+		 * 		strings to be decoded with more leniency.
 		 * @return A native object as specified by s
 		 * @throw JSONParseError
 		 * @langversion ActionScript 3.0
@@ -78,9 +78,28 @@ package com.adobe.serialization.json
 		 */
 		public static function decode( s:String, strict:Boolean = true ):*
 		{
-			return new JSONDecoder( s, strict ).getValue();
+			return new JSONDecoder( s, strict ).getValue();	
 		}
-	
+
+		/**
+		 * Decodes a JSON string into an XML object.
+		 * 
+		 * @param s The JSON string representing an XML document.
+		 * @param rootElementName The name to use for the XML root element. If
+		 *      null, the parser will attempt to use the first JSON property 
+		 *      name as the XML root. 
+		 * @param strict Flag indicating if the decoder should strictly adhere
+		 * 		to the JSON standard or not.  The default of <code>true</code>
+		 * 		throws errors if the format does not match the JSON syntax exactly.
+		 * 		Pass <code>false</code> to allow for non-properly-formatted JSON
+		 * 		strings to be decoded with more leniency.
+		 * @return An XML object as specified by s
+		 * @throw JSONParseError
+		 */
+		public static function decodeToXML( s:String, rootElementName:String = null, strict:Boolean = true ):XML
+		{
+		    return new JSONToXMLDecoder( s, rootElementName, strict ).getValue();
+		}
 	}
 
 }
